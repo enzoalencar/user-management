@@ -14,12 +14,16 @@ public sealed class MongoFixture : IAsyncLifetime
     private readonly string _dbName = $"user_{Guid.NewGuid():N}";
 
     public IUserRepository Repository { get; private set; } = default!;
+    public string ConnectionString { get; }
+    public string DatabaseName => _dbName;
+    public string UsersCollectionName => "users";
 
     public MongoFixture()
     {
         var connectionString =
             Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING")
             ?? DefaultConnectionString;
+        ConnectionString = connectionString;
 
         var settings = MongoClientSettings.FromConnectionString(connectionString);
         settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5);

@@ -10,12 +10,12 @@ public static class FindOneUserHandler
         CancellationToken cancellationToken)
     {
         if (request.Id == Guid.Empty)
-            return Results.BadRequest(new { message = "User Id are required." });
+            throw new ArgumentException("User Id is required.");
         
         var user = await userRepository.FindOneAsync(request.Id);
         
         if (user == null)
-            return Results.BadRequest(new { message = "User not found." });
+            throw new KeyNotFoundException("User not found.");
 
         var result = new FindOneUserResult
         {

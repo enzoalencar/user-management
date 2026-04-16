@@ -9,8 +9,9 @@ public static class CreateUserHandler
         IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return Results.BadRequest(new { message = "Email are required." });
+        if (string.IsNullOrWhiteSpace(request.FirstName) ||
+            string.IsNullOrWhiteSpace(request.Email))
+            throw new ArgumentException("First name and Email are required.");
 
         var userToCreate = new User
         {

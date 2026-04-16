@@ -12,7 +12,7 @@ public class FindAllUsersHandler
         var users = await userRepository.FindAllAsync(cancellationToken);
         
         if (users == null || users.Count == 0)
-            return Results.BadRequest(new { message = "User not found." });
+            throw new KeyNotFoundException("Users not found.");
 
         var result = new List<FindAllUsersResult>();
         foreach (var user in users)

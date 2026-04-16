@@ -17,6 +17,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>(); //TODO: Remove
 
 var app = builder.Build();
 
+app.UseMiddleware<UserManagement.Api.Utils.Middleware.GlobalExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

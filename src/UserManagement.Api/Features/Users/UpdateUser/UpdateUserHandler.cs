@@ -10,7 +10,7 @@ public static class UpdateUserHandler
         CancellationToken cancellationToken)
     {
         if (request.Id == Guid.Empty)
-            return Results.BadRequest(new { message = "User Id are required." });
+            throw new ArgumentException("User Id is required.");
         
         var userToUpdate = new User
         {

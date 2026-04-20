@@ -20,6 +20,7 @@ public static class UpdateUserEndpoint
                     LastName = request.LastName,
                     DateOfBirth = request.DateOfBirth,
                     Email = request.Email,
+                    Password = request.Password,
                     DocumentNumber = request.DocumentNumber,
                     PhoneNumber = request.PhoneNumber
                 },

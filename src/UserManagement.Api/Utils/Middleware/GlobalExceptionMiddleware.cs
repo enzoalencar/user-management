@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace UserManagement.Api.Utils.Middleware;
 
@@ -21,6 +22,11 @@ public sealed class GlobalExceptionMiddleware(
         {
             logger.LogWarning(ex, "Resource not found");
             await WriteProblem(context, StatusCodes.Status404NotFound, "Not found", ex.Message);
+        }
+        catch (SecurityTokenException ex)
+        {
+            logger.LogWarning(ex, "Unauthorized request");
+            await WriteProblem(context, StatusCodes.Status401Unauthorized, "Unauthorized", ex.Message);
         }
         catch (Exception ex)
         {

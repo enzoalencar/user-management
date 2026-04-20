@@ -12,7 +12,7 @@ public static class FindOneUserHandler
         if (request.Id == Guid.Empty)
             throw new ArgumentException("User Id is required.");
         
-        var user = await userRepository.FindOneAsync(request.Id);
+        var user = await userRepository.FindOneAsync(request.Id, cancellationToken);
         
         if (user == null)
             throw new KeyNotFoundException("User not found.");

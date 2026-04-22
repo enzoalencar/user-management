@@ -11,20 +11,23 @@ public static class UpdateUserHandler
     {
         if (request.Id == Guid.Empty)
             throw new ArgumentException("User Id is required.");
-        
-        var userToUpdate = new User
-        {
-            Id = request.Id,
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            DateOfBirth = request.DateOfBirth.ToUniversalTime(),
-            Email = request.Email,
-            DocumentNumber = request.DocumentNumber,
-            PhoneNumber = request.PhoneNumber ?? [],
-            IsActive = true
-        };
-        
-        var  result = await userRepository.UpdateAsync(userToUpdate, cancellationToken);
+
+        var existingUser = await userRepository.FindOneAsync(request.Id, cancellationToken);
+        if (existingUser == null)
+            throw new KeyNotFoundException("User not found.");
+
+        existingUser.FirstName = request.FirstName.Trim();
+        existingUser.LastName = request.LastName.Trim();
+        existingUser.DateOfBirth = request.DateOfBirth.ToUniversalTime();
+        existingUser.Email = request.Email;
+        existingUser.DocumentNumber = request.DocumentNumber;
+        existingUser.PhoneNumber = request.PhoneNumber ?? [];
+        existingUser.IsActive = true;
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+            existingUser.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        var result = await userRepository.UpdateAsync(existingUser, cancellationToken);
         
         return Results.Ok(result);
     }

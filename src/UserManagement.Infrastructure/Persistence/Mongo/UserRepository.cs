@@ -36,4 +36,10 @@ public sealed class UserRepository(IMongoCollection<User> usersCollection) : IUs
         var result = await usersCollection.DeleteOneAsync(filter, cancellationToken);
         return result.DeletedCount > 0;
     }
+
+    public async Task<User?> FindOneByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var filter = Builders<User>.Filter.Eq(o => o.Email, email);
+        return await usersCollection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+    }
 }

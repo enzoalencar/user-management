@@ -34,6 +34,7 @@ public static class UserBsonClassMap
                 .SetElementName("dateOfBirth")
                 .SetSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
+            classMap.MapMember(user => user.Password).SetElementName("password");
             classMap.MapMember(user => user.Email).SetElementName("email");
             classMap.MapMember(user => user.DocumentNumber).SetElementName("documentNumber");
             classMap.MapMember(user => user.PhoneNumber).SetElementName("phoneNumbers");

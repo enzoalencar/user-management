@@ -7,4 +7,5 @@ public interface IUserRepository
     Task<List<User>?> FindAllAsync(CancellationToken cancellationToken = default);
     Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<User?> FindOneByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

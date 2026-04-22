@@ -47,6 +47,7 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Email = "enzo.integration@test.com",
+            Password = "MyStrongPassword123!",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511999999999"]
         };

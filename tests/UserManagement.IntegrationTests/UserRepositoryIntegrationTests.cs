@@ -24,6 +24,7 @@ public class UserRepositoryIntegrationTests : IClassFixture<MongoFixture>
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Email = "enzo@test.com",
+            Password = "hashed-password",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511999999999"],
             IsActive = true
@@ -50,6 +51,7 @@ public class UserRepositoryIntegrationTests : IClassFixture<MongoFixture>
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Email = "enzo@test.com",
+            Password = "hashed-password",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511999999999"],
             IsActive = true
@@ -64,6 +66,7 @@ public class UserRepositoryIntegrationTests : IClassFixture<MongoFixture>
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Email = "enzo.atualizado@test.com",
+            Password = "hashed-password-2",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511988888888"],
             IsActive = true
@@ -92,6 +95,7 @@ public class UserRepositoryIntegrationTests : IClassFixture<MongoFixture>
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Email = "enzo@test.com",
+            Password = "hashed-password",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511999999999"],
             IsActive = true

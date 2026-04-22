@@ -10,8 +10,9 @@ public static class CreateUserHandler
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.FirstName) ||
-            string.IsNullOrWhiteSpace(request.Email))
-            throw new ArgumentException("First name and Email are required.");
+            string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Password))
+            throw new ArgumentException("First name, email and password are required.");
 
         var userToCreate = new User
         {
@@ -20,6 +21,7 @@ public static class CreateUserHandler
             LastName = request.LastName.Trim(),
             DateOfBirth = request.DateOfBirth.ToUniversalTime(),
             Email = request.Email,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
             DocumentNumber = request.DocumentNumber,
             PhoneNumber = request.PhoneNumber ?? [],
             IsActive = true

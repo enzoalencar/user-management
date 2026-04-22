@@ -8,6 +8,7 @@ public class User
     public DateTime DateOfBirth { get; set; }
     
     // TODO: change primitive types to value objects
+    public string Password { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string DocumentNumber { get; set; } = string.Empty;
     public List<string> PhoneNumber { get; set; } = [];

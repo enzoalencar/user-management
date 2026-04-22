@@ -1,57 +1,74 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using UserManagement.Api.Features.Auth.Jwt;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Auth.Login;
 
-public class LoginHandler(IConfiguration config)
+public sealed class LoginHandler(
+    IUserRepository userRepository,
+    IOptions<JwtSettings> jwtSettingsOptions)
 {
-    public async Task<IResult> Handle(
-        LoginRequest request,
-        IUserRepository userRepository,
-        CancellationToken cancellationToken)
+    public async Task<LoginResponse> Handle(LoginRequest request, CancellationToken cancellationToken)
     {
-        var email = request.Email.Trim();
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             throw new ArgumentException("Email and password are required.");
 
-        var user = await userRepository.FindOneByEmailAsync(email, cancellationToken);
+        var user = await userRepository.FindOneByEmailAsync(request.Email.Trim(), cancellationToken);
         
-        if (user == null)
-            throw new KeyNotFoundException("User not found.");
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            throw new SecurityTokenException("Invalid credentials.");
 
-        var checkPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
-        
-        return checkPassword
-            ? Results.Ok(GenerateJwt(user)) 
-            : throw new SecurityTokenException("Invalid login attempt.");
-    }
+        if (!user.IsActive)
+            throw new SecurityTokenException("Inactive user.");
 
-    private string GenerateJwt(User user)
-    {
-        var secret = config["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT secret is not configured.");
-        var issuer = config["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT issuer is not configured.");
-        var audience = config["Jwt:Audience"] ?? throw new InvalidOperationException("JWT audience is not configured.");
+        var jwtSettings = jwtSettingsOptions.Value;
+        ValidateJwtSettings(jwtSettings);
 
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        var userClaims = new[]
+        var now = DateTime.UtcNow;
+        var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.FirstName!),
-            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
+            new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: userClaims,
-            expires: DateTime.Now.AddDays(5),
-            signingCredentials: credentials
-        );
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey));
+        var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenDescriptor = new JwtSecurityToken(
+            issuer: jwtSettings.Issuer,
+            audience: jwtSettings.Audience,
+            claims: claims,
+            notBefore: now,
+            expires: now.AddMinutes(jwtSettings.ExpirationInMinutes),
+            signingCredentials: signingCredentials);
+
+        var token = new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+
+        return new LoginResponse(token);
+    }
+
+    private static void ValidateJwtSettings(JwtSettings jwtSettings)
+    {
+        if (string.IsNullOrWhiteSpace(jwtSettings.Issuer))
+            throw new InvalidOperationException($"'{JwtSettings.SectionName}:Issuer' not configured.");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.Audience))
+            throw new InvalidOperationException($"'{JwtSettings.SectionName}:Audience' not configured.");
+
+        if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+            throw new InvalidOperationException($"'{JwtSettings.SectionName}:SecretKey' not configured.");
+
+        if (jwtSettings.SecretKey.Length < 32)
+            throw new InvalidOperationException($"'{JwtSettings.SectionName}:SecretKey' must have at least 32 characters.");
+
+        if (jwtSettings.ExpirationInMinutes <= 0)
+            throw new InvalidOperationException($"'{JwtSettings.SectionName}:ExpirationInMinutes' must be greater than zero.");
     }
 }

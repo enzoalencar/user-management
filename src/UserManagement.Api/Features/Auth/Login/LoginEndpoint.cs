@@ -1,22 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
-using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Auth.Login;
 
 public static class LoginEndpoint
 {
-    public static IEndpointRouteBuilder MapLoginEndpoint(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapLogin(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/login", (
-                    LoginHandler loginHandler,
-                    [FromBody] LoginRequest request,
-                    IUserRepository userRepository,
-                    CancellationToken cancellationToken) =>
-                loginHandler.Handle(request, userRepository, cancellationToken))
+        app.MapPost("/auth/login", async (
+                [FromBody] LoginRequest request,
+                LoginHandler loginHandler,
+                CancellationToken cancellationToken) =>
+            {
+                var response = await loginHandler.Handle(request, cancellationToken);
+                return Results.Ok(response);
+            })
             .WithName("Login")
-            .Produces<string>()
-            .Produces(StatusCodes.Status400BadRequest);
-        
+            .WithSummary("Authenticates a user and returns a JWT token")
+            .AllowAnonymous()
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+
         return app;
     }
 }

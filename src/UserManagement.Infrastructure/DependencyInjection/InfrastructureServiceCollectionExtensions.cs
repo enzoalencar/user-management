@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using UserManagement.Domain.Auth;
 using UserManagement.Domain.Users;
 using UserManagement.Infrastructure.Persistence;
 using UserManagement.Infrastructure.Persistence.Mongo;
@@ -13,6 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         UserBsonClassMap.Register();
+        RefreshTokenBsonClassMap.Register();
 
         services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
     
@@ -45,7 +47,16 @@ public static class InfrastructureServiceCollectionExtensions
             return database.GetCollection<User>(settings.UsersCollectionName);
         });
 
+        services.AddScoped<IMongoCollection<RefreshToken>>(serviceProvider =>
+        {
+            var settings = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+            var database = serviceProvider.GetRequiredService<IMongoDatabase>();
+
+            return database.GetCollection<RefreshToken>(settings.RefreshTokensCollectionName);
+        });
+
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         return services;
     }

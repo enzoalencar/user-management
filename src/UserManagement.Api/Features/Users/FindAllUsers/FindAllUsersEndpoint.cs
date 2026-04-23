@@ -1,3 +1,4 @@
+using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.FindAllUsers;
@@ -12,6 +13,7 @@ public static class FindAllUsersEndpoint
             FindAllUsersHandler.Handle(new FindAllUsersRequest(), userRepository, cancellationToken))
             .WithName("FindAllUsers")
             .WithSummary("Find all users")
+            .RequireAuthorization(AuthPolicies.ActiveUser)
             .Produces<List<FindAllUsersResult>>()
             .Produces(StatusCodes.Status400BadRequest);
         

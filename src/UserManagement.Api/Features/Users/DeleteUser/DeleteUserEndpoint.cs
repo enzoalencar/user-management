@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.DeleteUser;
@@ -14,6 +15,7 @@ public static class DeleteUserEndpoint
             DeleteUserHandler.Handle(new DeleteUserRequest { Id = id }, userRepository, cancellationToken))
             .WithName("DeleteUser")
             .WithSummary("Deletes a user")
+            .RequireAuthorization(AuthPolicies.ActiveUser)
             .Produces<DeleteUserResponse>()
             .Produces(StatusCodes.Status404NotFound);
 

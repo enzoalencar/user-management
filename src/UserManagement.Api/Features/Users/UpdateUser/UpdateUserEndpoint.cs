@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.UpdateUser;
@@ -28,6 +29,7 @@ public static class UpdateUserEndpoint
                 cancellationToken))
             .WithName("UpdateUser")
             .WithSummary("Updates a user")
+            .RequireAuthorization(AuthPolicies.ActiveUser)
             .Produces<UpdateUserResponse>()
             .Produces(StatusCodes.Status400BadRequest);
         

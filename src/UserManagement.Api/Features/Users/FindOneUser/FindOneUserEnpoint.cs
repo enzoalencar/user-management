@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.FindOneUser;
@@ -17,6 +18,7 @@ public static class FindOneUserEnpoint
                 cancellationToken))
             .WithName("FindOneUser")
             .WithSummary("Find one user")
+            .RequireAuthorization(AuthPolicies.ActiveUser)
             .Produces<FindOneUserResult>()
             .Produces(StatusCodes.Status400BadRequest);
         

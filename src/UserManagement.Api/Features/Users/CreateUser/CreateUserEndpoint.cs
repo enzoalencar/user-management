@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.CreateUser;
@@ -14,7 +15,7 @@ public static class CreateUserEndpoint
             CreateUserHandler.Handle(request, userRepository, cancellationToken))
             .WithName("CreateUser")
             .WithSummary("Creates a new user")
-            .AllowAnonymous()
+            .RequireAuthorization(AuthPolicies.ActiveUser)
             .Produces<CreateUserResponse>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 

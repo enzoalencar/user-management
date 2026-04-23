@@ -17,6 +17,7 @@ public sealed class MongoFixture : IAsyncLifetime
     public string ConnectionString { get; }
     public string DatabaseName => _dbName;
     public string UsersCollectionName => "users";
+    public string RefreshTokensCollectionName => "refresh_tokens";
 
     public MongoFixture()
     {

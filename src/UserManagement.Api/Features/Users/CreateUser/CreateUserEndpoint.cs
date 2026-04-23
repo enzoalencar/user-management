@@ -15,7 +15,7 @@ public static class CreateUserEndpoint
             CreateUserHandler.Handle(request, userRepository, cancellationToken))
             .WithName("CreateUser")
             .WithSummary("Creates a new user")
-            .RequireAuthorization(AuthPolicies.ActiveUser)
+            .AllowAnonymous()
             .Produces<CreateUserResponse>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 

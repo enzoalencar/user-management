@@ -46,7 +46,7 @@ public sealed class AuthEndpointsIntegrationTests : IClassFixture<MongoFixture>,
                         ["Jwt:Audience"] = JwtAudience,
                         ["Jwt:SecretKey"] = JwtSecretKey,
                         ["Jwt:AccessTokenExpirationInMinutes"] = "3",
-                        ["Jwt:RefreshTokenExpirationInMinutes"] = "60",
+                        ["Jwt:RefreshTokenExpirationInDays"] = "60",
                         ["Jwt:RefreshTokenCookieName"] = RefreshTokenCookieName
                     };
 

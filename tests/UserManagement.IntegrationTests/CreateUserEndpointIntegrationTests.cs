@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using UserManagement.Api.Features.Users.CreateUser;
 using Xunit;
 
@@ -17,25 +15,8 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     public CreateUserEndpointIntegrationTests(MongoFixture fixture)
     {
         _fixture = fixture;
-
-        _factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Development");
-                builder.ConfigureAppConfiguration((_, configBuilder) =>
-                {
-                    var testSettings = new Dictionary<string, string?>
-                    {
-                        ["MongoDb:ConnectionString"] = _fixture.ConnectionString,
-                        ["MongoDb:DatabaseName"] = _fixture.DatabaseName,
-                        ["MongoDb:UsersCollectionName"] = _fixture.UsersCollectionName
-                    };
-
-                    configBuilder.AddInMemoryCollection(testSettings);
-                });
-            });
-
-        _httpClient = _factory.CreateClient();
+        _factory = UsersEndpointTestHost.CreateFactory(_fixture);
+        _httpClient = UsersEndpointTestHost.CreateHttpsClient(_factory);
     }
 
     [Fact]
@@ -72,6 +53,25 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.Equal("Enzo", persisted.FirstName);
         Assert.Equal(request.Email, persisted.Email);
         Assert.True(persisted.IsActive);
+    }
+
+    [Fact]
+    public async Task PostUsers_WhenRequiredFieldsAreMissing_ShouldReturnBadRequest()
+    {
+        var request = new CreateUserRequest
+        {
+            FirstName = string.Empty,
+            LastName = "Alencar",
+            DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            Email = string.Empty,
+            Password = string.Empty,
+            DocumentNumber = "12345678900",
+            PhoneNumber = ["+5511999999999"]
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("/users", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     public void Dispose()

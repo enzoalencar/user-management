@@ -13,6 +13,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
+        services.AddScoped<LoginHandler>();
+        services.AddScoped<RefreshHandler>();
+        services.AddScoped<JwtTokenService>();
         services.AddScoped<CreateUserHandler>();
         services.AddScoped<DeleteUserHandler>();
         services.AddScoped<FindAllUsersHandler>();

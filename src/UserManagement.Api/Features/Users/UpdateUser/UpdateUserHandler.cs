@@ -2,20 +2,20 @@ using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.UpdateUser;
 
-public static class UpdateUserHandler
+public sealed class UpdateUserHandler(IUserRepository repository)
 {
-    public static async Task<IResult> Handle(
+    public async Task<UpdateUserResult> Handle(
         UpdateUserRequest request,
-        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
         if (request.Id == Guid.Empty)
             throw new ArgumentException("User Id is required.");
 
-        var existingUser = await userRepository.FindOneAsync(request.Id, cancellationToken);
+        var existingUser = await repository.FindOneAsync(request.Id, cancellationToken);
         if (existingUser == null)
             throw new KeyNotFoundException("User not found.");
 
+        // TODO: use immutable variables
         existingUser.FirstName = request.FirstName.Trim();
         existingUser.LastName = request.LastName.Trim();
         existingUser.DateOfBirth = request.DateOfBirth.ToUniversalTime();
@@ -27,8 +27,21 @@ public static class UpdateUserHandler
         if (!string.IsNullOrWhiteSpace(request.Password))
             existingUser.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var result = await userRepository.UpdateAsync(existingUser, cancellationToken);
+        var updated = await repository.UpdateAsync(existingUser, cancellationToken);
+        if (!updated) throw new Exception("Error updating user");
+
+        var result = new UpdateUserResult
+        {
+            Id = existingUser.Id,
+            FirstName = existingUser.FirstName,
+            LastName = existingUser.LastName,
+            DateOfBirth = existingUser.DateOfBirth,
+            Email = existingUser.Email,
+            DocumentNumber = existingUser.DocumentNumber,
+            PhoneNumber = existingUser.PhoneNumber,
+            IsActive = existingUser.IsActive
+        };
         
-        return Results.Ok(result);
+        return result;
     }
 }

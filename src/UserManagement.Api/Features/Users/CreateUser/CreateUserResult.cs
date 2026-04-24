@@ -1,6 +1,6 @@
-namespace UserManagement.Api.Features.Users.UpdateUser;
+namespace UserManagement.Api.Features.Users.CreateUser;
 
-public class UpdateUserResponse
+public class CreateUserResult
 {
     public Guid Id { get; set; }
     public string FirstName { get; set; } = string.Empty;

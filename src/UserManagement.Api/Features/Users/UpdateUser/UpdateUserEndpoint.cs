@@ -11,9 +11,9 @@ public static class UpdateUserEndpoint
         app.MapPut("/users/{id:guid}", (
                 [FromRoute] Guid id,
                 [FromBody] UpdateUserRequest request,
-                IUserRepository userRepository,
+                UpdateUserHandler handler,
                 CancellationToken cancellationToken) =>
-            UpdateUserHandler.Handle(
+            Handle(
                 new UpdateUserRequest
                 {
                     Id = id,
@@ -25,14 +25,23 @@ public static class UpdateUserEndpoint
                     DocumentNumber = request.DocumentNumber,
                     PhoneNumber = request.PhoneNumber
                 },
-                userRepository,
+                handler,
                 cancellationToken))
             .WithName("UpdateUser")
             .WithSummary("Updates a user")
             .RequireAuthorization(AuthPolicies.ActiveUser)
-            .Produces<UpdateUserResponse>()
+            .Produces<UpdateUserResult>()
             .Produces(StatusCodes.Status400BadRequest);
         
         return app;
+    }
+    
+    private static async Task<IResult> Handle(
+        UpdateUserRequest request,
+        UpdateUserHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.Handle(request, cancellationToken);
+        return Results.Ok(result);
     }
 }

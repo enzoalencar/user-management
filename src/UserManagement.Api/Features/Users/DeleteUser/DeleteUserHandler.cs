@@ -2,15 +2,19 @@ using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.DeleteUser;
 
-public static class DeleteUserHandler
+public sealed class DeleteUserHandler(IUserRepository repository)
 {
-    public static async Task<IResult> Handle(
+    public async Task<DeleteUserResult> Handle(
         DeleteUserRequest request,
-        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
-        await userRepository.DeleteAsync(request.Id, cancellationToken);
+        var deleted = await repository.DeleteAsync(request.Id, cancellationToken);
 
-        return Results.Ok();
+        var result = new DeleteUserResult
+        {
+            Deleted = deleted
+        };
+
+        return result;
     }
 }

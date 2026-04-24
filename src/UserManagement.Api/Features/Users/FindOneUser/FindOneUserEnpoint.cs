@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Api.Features.Auth.Authorization;
-using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.FindOneUser;
 
@@ -10,11 +9,11 @@ public static class FindOneUserEnpoint
     {
         app.MapGet("/users/{id:guid}", (
                 [FromRoute] Guid id,
-                IUserRepository userRepository,
+                FindOneUserHandler handler,
                 CancellationToken cancellationToken) =>
-            FindOneUserHandler.Handle(
+            Handle(
                 new FindOneUserRequest { Id = id },
-                userRepository,
+                handler,
                 cancellationToken))
             .WithName("FindOneUser")
             .WithSummary("Find one user")
@@ -23,5 +22,14 @@ public static class FindOneUserEnpoint
             .Produces(StatusCodes.Status400BadRequest);
         
         return app;
+    }
+    
+    private static async Task<IResult> Handle(
+        FindOneUserRequest request,
+        FindOneUserHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.Handle(request, cancellationToken);
+        return TypedResults.Ok(result);
     }
 }

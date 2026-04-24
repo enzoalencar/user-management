@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using UserManagement.Api.Features.Auth.Authorization;
-using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.CreateUser;
 
@@ -10,15 +8,24 @@ public static class CreateUserEndpoint
     {
         app.MapPost("/users", (
                 [FromBody] CreateUserRequest request,
-                IUserRepository userRepository,
+                CreateUserHandler handler,
                 CancellationToken cancellationToken) =>
-            CreateUserHandler.Handle(request, userRepository, cancellationToken))
+            Handle(request, handler, cancellationToken))
             .WithName("CreateUser")
             .WithSummary("Creates a new user")
             .AllowAnonymous()
-            .Produces<CreateUserResponse>(StatusCodes.Status201Created)
+            .Produces<CreateUserResult>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest);
 
         return app;
+    }
+
+    private static async Task<IResult> Handle(
+        CreateUserRequest request,
+        CreateUserHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.Handle(request, cancellationToken);
+        return Results.Created($"/users/{result.Id}", result);
     }
 }

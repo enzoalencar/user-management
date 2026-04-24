@@ -2,11 +2,10 @@ using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.FindOneUser;
 
-public static class FindOneUserHandler
+public sealed class FindOneUserHandler(IUserRepository userRepository)
 {
-    public static async Task<IResult> Handle(
+    public async Task<FindOneUserResult> Handle(
         FindOneUserRequest request,
-        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
         if (request.Id == Guid.Empty)
@@ -29,6 +28,6 @@ public static class FindOneUserHandler
             IsActive = user.IsActive
         };
         
-        return Results.Ok(result);
+        return result;
     }
 }

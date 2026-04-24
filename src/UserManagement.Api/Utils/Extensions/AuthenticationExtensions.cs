@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Api.Features.Auth.Jwt;
+using UserManagement.Api.Features.Auth.Login;
+using UserManagement.Api.Features.Auth.Refresh;
 
 namespace UserManagement.Api.Utils.Extensions;
 
@@ -22,6 +24,8 @@ public static class AuthenticationExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
+                
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -48,6 +52,10 @@ public static class AuthenticationExtensions
                 .RequireClaim(JwtRegisteredClaimNames.Sub)
                 .RequireClaim(JwtRegisteredClaimNames.Email)
                 .Build());
+        
+        services.AddScoped<LoginHandler>();
+        services.AddScoped<RefreshHandler>();
+        services.AddScoped<JwtTokenService>();
         
         return services;
     }

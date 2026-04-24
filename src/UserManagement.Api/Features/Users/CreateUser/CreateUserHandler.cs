@@ -2,11 +2,10 @@ using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.CreateUser;
 
-public static class CreateUserHandler
+public sealed class CreateUserHandler(IUserRepository userRepository)
 {
-    public static async Task<IResult> Handle(
+    public async Task<CreateUserResult> Handle(
         CreateUserRequest request,
-        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.FirstName) ||
@@ -29,7 +28,7 @@ public static class CreateUserHandler
 
         var user = await userRepository.CreateAsync(userToCreate, cancellationToken);
 
-        var response = new CreateUserResponse
+        var response = new CreateUserResult
         {
             Id = user.Id,
             FirstName = user.FirstName,
@@ -41,6 +40,6 @@ public static class CreateUserHandler
             IsActive = user.IsActive
         };
 
-        return Results.Created($"/users/{user.Id}", response);
+        return response;
     }
 }

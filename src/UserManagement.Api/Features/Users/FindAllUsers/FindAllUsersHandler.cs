@@ -2,14 +2,13 @@ using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.FindAllUsers;
 
-public class FindAllUsersHandler
+public sealed class FindAllUsersHandler(IUserRepository repository)
 {
-    public static async Task<IResult> Handle(
+    public async Task<List<FindAllUsersResult>> Handle(
         FindAllUsersRequest request,
-        IUserRepository userRepository,
         CancellationToken cancellationToken)
     {
-        var users = await userRepository.FindAllAsync(cancellationToken);
+        var users = await repository.FindAllAsync(cancellationToken);
         
         if (users == null || users.Count == 0)
             throw new KeyNotFoundException("Users not found.");
@@ -32,6 +31,6 @@ public class FindAllUsersHandler
             result.Add(mapUser);
         }
         
-        return Results.Ok(result);
+        return result;
     }
 }

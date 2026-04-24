@@ -12,7 +12,7 @@ public static class ApiEndpointExtensions
 {
     public static IEndpointRouteBuilder MapApiEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
         app.MapLogin();
         app.MapRefresh();
         app.MapCreateUser();

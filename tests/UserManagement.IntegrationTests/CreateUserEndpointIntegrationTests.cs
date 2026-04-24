@@ -56,7 +56,7 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var body = await response.Content.ReadFromJsonAsync<CreateUserResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CreateUserResult>();
         Assert.NotNull(body);
         Assert.NotEqual(Guid.Empty, body.Id);
         Assert.Equal("Enzo", body.FirstName);

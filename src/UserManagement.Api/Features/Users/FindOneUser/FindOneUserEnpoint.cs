@@ -17,7 +17,7 @@ public static class FindOneUserEnpoint
                 cancellationToken))
             .WithName("FindOneUser")
             .WithSummary("Find one user")
-            .RequireAuthorization(AuthPolicies.ActiveUser)
+            .RequireAuthorization(AuthPolicies.OwnerOrAdministrator)
             .Produces<FindOneUserResult>()
             .Produces(StatusCodes.Status400BadRequest);
         

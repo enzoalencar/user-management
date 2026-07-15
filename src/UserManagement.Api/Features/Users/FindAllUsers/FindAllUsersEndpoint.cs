@@ -12,7 +12,7 @@ public static class FindAllUsersEndpoint
             Handle(new FindAllUsersRequest(), handler, cancellationToken))
             .WithName("FindAllUsers")
             .WithSummary("Find all users")
-            .RequireAuthorization(AuthPolicies.ActiveUser)
+            .RequireAuthorization(AuthPolicies.Administrator)
             .Produces<List<FindAllUsersResult>>()
             .Produces(StatusCodes.Status400BadRequest);
         

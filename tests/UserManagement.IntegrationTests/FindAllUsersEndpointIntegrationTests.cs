@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UserManagement.Api.Features.Users.FindAllUsers;
+using UserManagement.Domain.Users;
 using Xunit;
 
 namespace UserManagement.IntegrationTests;
@@ -21,10 +22,14 @@ public sealed class FindAllUsersEndpointIntegrationTests : IClassFixture<MongoFi
     }
 
     [Fact]
-    public async Task GetUsers_WhenAccessTokenIsValid_ShouldReturnOkWithUsers()
+    public async Task GetUsers_WhenAdministratorIsAuthenticated_ShouldReturnOkWithoutSensitiveData()
     {
         var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "find-all");
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "find-all-auth");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "find-all-admin",
+            UserRole.Administrator);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/users");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -44,6 +49,22 @@ public sealed class FindAllUsersEndpointIntegrationTests : IClassFixture<MongoFi
         Assert.NotNull(body);
         Assert.NotEmpty(body);
         Assert.Contains(body, user => user.Id == seeded.Id && user.Email == seeded.Email);
+    }
+
+    [Fact]
+    public async Task GetUsers_WhenCommonUserIsAuthenticated_ShouldReturnForbidden()
+    {
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "find-all-common");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/users");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

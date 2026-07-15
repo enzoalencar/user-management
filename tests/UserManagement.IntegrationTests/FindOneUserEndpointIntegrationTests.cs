@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UserManagement.Api.Features.Users.FindOneUser;
+using UserManagement.Domain.Users;
 using Xunit;
 
 namespace UserManagement.IntegrationTests;
@@ -21,10 +22,10 @@ public sealed class FindOneUserEndpointIntegrationTests : IClassFixture<MongoFix
     }
 
     [Fact]
-    public async Task GetUserById_WhenUserExistsAndAccessTokenIsValid_ShouldReturnOk()
+    public async Task GetUserById_WhenRequestingOwnAccount_ShouldReturnOk()
     {
         var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "find-one");
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "find-one-auth");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/users/{seeded.Id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -40,9 +41,48 @@ public sealed class FindOneUserEndpointIntegrationTests : IClassFixture<MongoFix
     }
 
     [Fact]
+    public async Task GetUserById_WhenAdministratorRequestsAnotherAccount_ShouldReturnOk()
+    {
+        var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "find-one-admin-target");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "find-one-admin",
+            UserRole.Administrator);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/users/{seeded.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUserById_WhenCommonUserRequestsAnotherAccount_ShouldReturnForbidden()
+    {
+        var target = await UsersEndpointTestHost.SeedUserAsync(_fixture, "find-one-forbidden-target");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "find-one-forbidden-auth");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/users/{target.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetUserById_WhenUserDoesNotExist_ShouldReturnNotFound()
     {
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "find-one-auth-not-found");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "find-one-auth-not-found",
+            UserRole.Administrator);
         var unknownId = Guid.NewGuid();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/users/{unknownId}");

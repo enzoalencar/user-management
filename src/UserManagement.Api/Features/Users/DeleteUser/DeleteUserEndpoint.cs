@@ -14,7 +14,7 @@ public static class DeleteUserEndpoint
                 Handle(new DeleteUserRequest { Id = id }, handler, cancellationToken))
             .WithName("DeleteUser")
             .WithSummary("Deletes a user")
-            .RequireAuthorization(AuthPolicies.ActiveUser)
+            .RequireAuthorization(AuthPolicies.OwnerOrAdministrator)
             .Produces<DeleteUserResult>()
             .Produces(StatusCodes.Status404NotFound);
 

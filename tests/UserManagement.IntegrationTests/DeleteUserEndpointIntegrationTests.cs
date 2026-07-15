@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UserManagement.Api.Features.Users.DeleteUser;
+using UserManagement.Domain.Users;
 using Xunit;
 
 namespace UserManagement.IntegrationTests;
@@ -21,10 +22,10 @@ public sealed class DeleteUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task DeleteUsers_WhenUserExistsAndAccessTokenIsValid_ShouldReturnOkAndDeleteUser()
+    public async Task DeleteUsers_WhenDeletingOwnAccount_ShouldReturnOkAndDeleteUser()
     {
         var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "delete");
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "delete-auth");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
 
         using var request = new HttpRequestMessage(HttpMethod.Delete, $"/users/{seeded.Id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -42,9 +43,31 @@ public sealed class DeleteUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
+    public async Task DeleteUsers_WhenCommonUserDeletesAnotherAccount_ShouldReturnForbidden()
+    {
+        var target = await UsersEndpointTestHost.SeedUserAsync(_fixture, "delete-forbidden-target");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "delete-forbidden-auth");
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/users/{target.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.NotNull(await _fixture.Repository.FindOneAsync(target.Id));
+    }
+
+    [Fact]
     public async Task DeleteUsers_WhenUserDoesNotExist_ShouldReturnOkWithDeletedFalse()
     {
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "delete-auth-not-found");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "delete-auth-not-found",
+            UserRole.Administrator);
 
         using var request = new HttpRequestMessage(HttpMethod.Delete, $"/users/{Guid.NewGuid()}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

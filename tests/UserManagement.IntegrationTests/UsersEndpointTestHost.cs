@@ -50,7 +50,10 @@ internal static class UsersEndpointTestHost
         });
     }
 
-    public static async Task<User> SeedUserAsync(MongoFixture fixture, string suffix = "user")
+    public static async Task<User> SeedUserAsync(
+        MongoFixture fixture,
+        string suffix = "user",
+        UserRole role = UserRole.User)
     {
         var user = new User
         {
@@ -62,7 +65,8 @@ internal static class UsersEndpointTestHost
             Password = BCrypt.Net.BCrypt.HashPassword(SeededPassword),
             DocumentNumber = $"DOC-{Guid.NewGuid():N}",
             PhoneNumber = ["+5511999999999"],
-            IsActive = true
+            IsActive = true,
+            Role = role
         };
 
         await fixture.Repository.CreateAsync(user);
@@ -72,13 +76,21 @@ internal static class UsersEndpointTestHost
     public static async Task<string> CreateAccessTokenByLoginAsync(
         HttpClient httpClient,
         MongoFixture fixture,
-        string suffix = "auth")
+        string suffix = "auth",
+        UserRole role = UserRole.User)
     {
-        var authUser = await SeedUserAsync(fixture, suffix);
+        var authUser = await SeedUserAsync(fixture, suffix, role);
+        return await CreateAccessTokenByLoginAsync(httpClient, authUser);
+    }
+
+    public static async Task<string> CreateAccessTokenByLoginAsync(
+        HttpClient httpClient,
+        User user)
+    {
 
         var loginRequest = new LoginRequest
         {
-            Email = authUser.Email,
+            Email = user.Email,
             Password = SeededPassword
         };
 

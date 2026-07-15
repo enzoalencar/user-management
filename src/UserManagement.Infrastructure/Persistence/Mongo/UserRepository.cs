@@ -8,6 +8,7 @@ public sealed class UserRepository(IMongoCollection<User> usersCollection) : IUs
 {
     public async Task<User> CreateAsync(User user, CancellationToken cancellationToken = default)
     {
+        user.Email = NormalizeEmail(user.Email);
         await usersCollection.InsertOneAsync(user, cancellationToken: cancellationToken);
         return user;
     }
@@ -25,6 +26,7 @@ public sealed class UserRepository(IMongoCollection<User> usersCollection) : IUs
     
     public async Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
+        user.Email = NormalizeEmail(user.Email);
         var filter = Builders<User>.Filter.Eq(o => o.Id, user.Id);
         var result = await usersCollection.ReplaceOneAsync(filter, user, cancellationToken: cancellationToken);
         return result.MatchedCount > 0;
@@ -39,7 +41,10 @@ public sealed class UserRepository(IMongoCollection<User> usersCollection) : IUs
 
     public async Task<User?> FindOneByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var filter = Builders<User>.Filter.Eq(o => o.Email, email);
+        var normalizedEmail = NormalizeEmail(email);
+        var filter = Builders<User>.Filter.Eq(o => o.Email, normalizedEmail);
         return await usersCollection.Find(filter).FirstOrDefaultAsync(cancellationToken);
     }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

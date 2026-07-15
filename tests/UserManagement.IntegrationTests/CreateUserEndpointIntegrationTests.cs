@@ -27,7 +27,7 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             FirstName = "  Enzo  ",
             LastName = "Alencar",
             DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            Email = "enzo.integration@test.com",
+            Email = "  Enzo.Integration@TEST.COM  ",
             Password = "MyStrongPassword123!",
             DocumentNumber = "12345678900",
             PhoneNumber = ["+5511999999999"]
@@ -42,7 +42,7 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.NotEqual(Guid.Empty, body.Id);
         Assert.Equal("Enzo", body.FirstName);
         Assert.Equal(request.LastName, body.LastName);
-        Assert.Equal(request.Email, body.Email);
+        Assert.Equal("enzo.integration@test.com", body.Email);
         Assert.True(body.IsActive);
         Assert.Equal($"/users/{body.Id}", response.Headers.Location?.OriginalString);
 
@@ -50,9 +50,29 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.NotNull(persisted);
         Assert.Equal(body.Id, persisted.Id);
         Assert.Equal("Enzo", persisted.FirstName);
-        Assert.Equal(request.Email, persisted.Email);
+        Assert.Equal("enzo.integration@test.com", persisted.Email);
         Assert.True(persisted.IsActive);
         Assert.Equal(UserManagement.Domain.Users.UserRole.User, persisted.Role);
+    }
+
+    [Fact]
+    public async Task PostUsers_WhenConcurrentRequestsUseSameNormalizedEmail_ShouldCreateOneAndReturnConflict()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var firstRequest = CreateRequest($"  Concurrent.{suffix}@TEST.COM  ");
+        var secondRequest = CreateRequest($"concurrent.{suffix}@test.com");
+
+        var responses = await Task.WhenAll(
+            _httpClient.PostAsJsonAsync("/users", firstRequest),
+            _httpClient.PostAsJsonAsync("/users", secondRequest));
+
+        Assert.Equal(
+            [HttpStatusCode.Created, HttpStatusCode.Conflict],
+            responses.Select(response => response.StatusCode).OrderBy(status => status));
+
+        var users = await _fixture.Repository.FindAllAsync();
+        Assert.NotNull(users);
+        Assert.Single(users, user => user.Email == $"concurrent.{suffix}@test.com");
     }
 
     [Fact]
@@ -79,4 +99,15 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         _httpClient.Dispose();
         _factory.Dispose();
     }
+
+    private static CreateUserRequest CreateRequest(string email) => new()
+    {
+        FirstName = "Concurrent",
+        LastName = "User",
+        DateOfBirth = new DateTime(1995, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        Email = email,
+        Password = "MyStrongPassword123!",
+        DocumentNumber = $"DOC-{Guid.NewGuid():N}",
+        PhoneNumber = ["+5511999999999"]
+    };
 }

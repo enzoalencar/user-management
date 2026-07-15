@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 
 namespace UserManagement.Api.Utils.Middleware;
 
@@ -22,6 +23,17 @@ public sealed class GlobalExceptionMiddleware(
         {
             logger.LogWarning(ex, "Resource not found");
             await WriteProblem(context, StatusCodes.Status404NotFound, "Not found", ex.Message);
+        }
+        // TODO: Translate MongoDB exceptions in the infrastructure layer.
+        catch (MongoWriteException ex) when (
+            ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            logger.LogWarning(ex, "Duplicate email");
+            await WriteProblem(
+                context,
+                StatusCodes.Status409Conflict,
+                "Conflict",
+                "A user with this email already exists.");
         }
         catch (SecurityTokenException ex)
         {

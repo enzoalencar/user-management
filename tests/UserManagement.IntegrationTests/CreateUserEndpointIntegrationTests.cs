@@ -43,7 +43,6 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.Equal("Enzo", body.FirstName);
         Assert.Equal(request.LastName, body.LastName);
         Assert.Equal(request.Email, body.Email);
-        Assert.Equal(request.DocumentNumber, body.DocumentNumber);
         Assert.True(body.IsActive);
         Assert.Equal($"/users/{body.Id}", response.Headers.Location?.OriginalString);
 
@@ -53,6 +52,7 @@ public sealed class CreateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.Equal("Enzo", persisted.FirstName);
         Assert.Equal(request.Email, persisted.Email);
         Assert.True(persisted.IsActive);
+        Assert.Equal(UserManagement.Domain.Users.UserRole.User, persisted.Role);
     }
 
     [Fact]

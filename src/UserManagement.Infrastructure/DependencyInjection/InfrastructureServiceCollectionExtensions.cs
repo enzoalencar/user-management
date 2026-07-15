@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using UserManagement.Domain.Auth;
 using UserManagement.Domain.Users;
+using UserManagement.Infrastructure.Caching.Redis;
 using UserManagement.Infrastructure.Persistence;
 using UserManagement.Infrastructure.Persistence.Mongo;
 
@@ -17,6 +19,22 @@ public static class InfrastructureServiceCollectionExtensions
         RefreshTokenBsonClassMap.Register();
 
         services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
+        services.Configure<RedisSettings>(configuration.GetSection(RedisSettings.SectionName));
+
+        var redisConnectionString = configuration[$"{RedisSettings.SectionName}:ConnectionString"]?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "um:";
+            });
+        }
+        else
+        {
+            services.AddSingleton<IDistributedCache, NoOpDistributedCache>();
+        }
     
         services.AddSingleton<IMongoClient>(serviceProvider =>
         {
@@ -56,7 +74,8 @@ public static class InfrastructureServiceCollectionExtensions
         });
 
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<RefreshTokenRepository>();
+        services.AddScoped<IRefreshTokenRepository, CachedRefreshTokenRepository>();
 
         return services;
     }

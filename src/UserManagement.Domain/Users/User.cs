@@ -14,4 +14,5 @@ public class User
     public List<string> PhoneNumber { get; set; } = [];
     
     public bool IsActive { get; set; }
+    public UserRole Role { get; set; } = UserRole.User;
 }

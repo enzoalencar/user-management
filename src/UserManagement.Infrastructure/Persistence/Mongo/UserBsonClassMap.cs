@@ -39,6 +39,9 @@ public static class UserBsonClassMap
             classMap.MapMember(user => user.DocumentNumber).SetElementName("documentNumber");
             classMap.MapMember(user => user.PhoneNumber).SetElementName("phoneNumbers");
             classMap.MapMember(user => user.IsActive).SetElementName("isActive");
+            classMap.MapMember(user => user.Role)
+                .SetElementName("role")
+                .SetSerializer(new EnumSerializer<UserRole>(BsonType.String));
         });
     }
 }

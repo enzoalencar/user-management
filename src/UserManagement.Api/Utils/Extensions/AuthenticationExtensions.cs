@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using UserManagement.Api.Features.Auth.Authorization;
 using UserManagement.Api.Features.Auth.Jwt;
+using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Utils.Extensions;
 
@@ -53,6 +54,8 @@ public static class AuthenticationExtensions
                 };
             });
 
+        services.AddSingleton<IAuthorizationHandler, OwnerOrAdministratorHandler>();
+
         services.AddAuthorizationBuilder()
             .AddPolicy(AuthPolicies.AuthenticatedUser, policy =>
                 policy.RequireAuthenticatedUser()
@@ -61,6 +64,14 @@ public static class AuthenticationExtensions
             .AddPolicy(AuthPolicies.ActiveUser, policy =>
                 policy.RequireAuthenticatedUser()
                     .RequireClaim(AuthClaimTypes.IsActive, "true"))
+            .AddPolicy(AuthPolicies.Administrator, policy =>
+                policy.RequireAuthenticatedUser()
+                    .RequireClaim(AuthClaimTypes.IsActive, "true")
+                    .RequireClaim(AuthClaimTypes.Role, UserRole.Administrator.ToString()))
+            .AddPolicy(AuthPolicies.OwnerOrAdministrator, policy =>
+                policy.RequireAuthenticatedUser()
+                    .RequireClaim(AuthClaimTypes.IsActive, "true")
+                    .AddRequirements(new OwnerOrAdministratorRequirement()))
             .SetFallbackPolicy(new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .RequireClaim(JwtRegisteredClaimNames.Sub)

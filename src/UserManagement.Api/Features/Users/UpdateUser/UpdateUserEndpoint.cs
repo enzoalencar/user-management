@@ -7,7 +7,7 @@ public static class UpdateUserEndpoint
 {
     public static IEndpointRouteBuilder MapUpdateUser(this IEndpointRouteBuilder app)
     {
-        app.MapPut("/users/{id:guid}", (
+        app.MapPatch("/users/{id:guid}", (
                 [FromRoute] Guid id,
                 [FromBody] UpdateUserRequest request,
                 UpdateUserHandler handler,

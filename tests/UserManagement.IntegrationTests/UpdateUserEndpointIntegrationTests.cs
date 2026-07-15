@@ -22,7 +22,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task PutUsers_WhenUpdatingOwnAccount_ShouldPersistChangesWithoutChangingPasswordOrStatus()
+    public async Task PatchUsers_WhenUpdatingOwnAccount_ShouldPersistChangesWithoutChangingPasswordOrStatus()
     {
         var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update");
         var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
@@ -39,7 +39,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             PhoneNumber = ["+5511888888888"]
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Put, $"/users/{seeded.Id}");
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/users/{seeded.Id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(requestBody);
 
@@ -62,7 +62,48 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task PutUsers_WhenCommonUserUpdatesAnotherAccount_ShouldReturnForbidden()
+    public async Task PatchUsers_WhenOnlyFirstNameIsProvided_ShouldPreserveOmittedFields()
+    {
+        var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update-partial");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
+
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/users/{seeded.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new UpdateUserRequest { FirstName = " Partial " });
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var persisted = await _fixture.Repository.FindOneAsync(seeded.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal("Partial", persisted.FirstName);
+        Assert.Equal(seeded.LastName, persisted.LastName);
+        Assert.Equal(seeded.DateOfBirth, persisted.DateOfBirth);
+        Assert.Equal(seeded.Email, persisted.Email);
+        Assert.Equal(seeded.DocumentNumber, persisted.DocumentNumber);
+        Assert.Equal(seeded.PhoneNumber, persisted.PhoneNumber);
+        Assert.Equal(seeded.Password, persisted.Password);
+        Assert.Equal(seeded.IsActive, persisted.IsActive);
+    }
+
+    [Fact]
+    public async Task PatchUsers_WhenNoFieldsAreProvided_ShouldReturnBadRequest()
+    {
+        var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update-empty");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
+
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/users/{seeded.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new UpdateUserRequest());
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchUsers_WhenCommonUserUpdatesAnotherAccount_ShouldReturnForbidden()
     {
         var target = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update-forbidden-target");
         var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
@@ -79,7 +120,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             PhoneNumber = target.PhoneNumber
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Put, $"/users/{target.Id}");
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/users/{target.Id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(requestBody);
 
@@ -93,7 +134,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task PutUsers_WhenUserDoesNotExist_ShouldReturnNotFound()
+    public async Task PatchUsers_WhenUserDoesNotExist_ShouldReturnNotFound()
     {
         var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
             _httpClient,
@@ -110,7 +151,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             PhoneNumber = ["+5511777777777"]
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Put, $"/users/{Guid.NewGuid()}");
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/users/{Guid.NewGuid()}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(requestBody);
 
@@ -120,7 +161,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task PutUsers_WhenAccessTokenIsMissing_ShouldReturnUnauthorized()
+    public async Task PatchUsers_WhenAccessTokenIsMissing_ShouldReturnUnauthorized()
     {
         var requestBody = new UpdateUserRequest
         {
@@ -132,7 +173,7 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
             PhoneNumber = ["+5511666666666"]
         };
 
-        var response = await _httpClient.PutAsJsonAsync($"/users/{Guid.NewGuid()}", requestBody);
+        var response = await _httpClient.PatchAsJsonAsync($"/users/{Guid.NewGuid()}", requestBody);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

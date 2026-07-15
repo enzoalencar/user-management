@@ -1,10 +1,12 @@
 using UserManagement.Api.Features.Auth.Login;
 using UserManagement.Api.Features.Auth.Refresh;
+using UserManagement.Api.Features.Users.ChangePassword;
 using UserManagement.Api.Features.Users.CreateUser;
 using UserManagement.Api.Features.Users.DeleteUser;
 using UserManagement.Api.Features.Users.FindAllUsers;
 using UserManagement.Api.Features.Users.FindOneUser;
 using UserManagement.Api.Features.Users.UpdateUser;
+using UserManagement.Api.Features.Users.UpdateUserStatus;
 
 namespace UserManagement.Api.Utils.Extensions;
 
@@ -18,6 +20,8 @@ public static class ApiEndpointExtensions
         app.MapCreateUser();
         app.MapDeleteUser();
         app.MapUpdateUser();
+        app.MapChangePassword();
+        app.MapUpdateUserStatus();
         app.MapFindOneUser();
         app.MapFindAllUser();
         

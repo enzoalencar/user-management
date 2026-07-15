@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UserManagement.Api.Features.Users.UpdateUser;
+using UserManagement.Domain.Users;
 using Xunit;
 
 namespace UserManagement.IntegrationTests;
@@ -21,17 +22,19 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
     }
 
     [Fact]
-    public async Task PutUsers_WhenPayloadIsValidAndAccessTokenIsValid_ShouldReturnOkAndPersistChanges()
+    public async Task PutUsers_WhenUpdatingOwnAccount_ShouldPersistChangesWithoutChangingPasswordOrStatus()
     {
         var seeded = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update");
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "update-auth");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, seeded);
+        seeded.IsActive = false;
+        await _fixture.Repository.UpdateAsync(seeded);
+
         var requestBody = new UpdateUserRequest
         {
             FirstName = " Updated ",
             LastName = "Name",
             DateOfBirth = new DateTime(1993, 5, 20, 0, 0, 0, DateTimeKind.Utc),
             Email = $"updated.{Guid.NewGuid():N}@test.com",
-            Password = "UpdatedPassword123!",
             DocumentNumber = "UPDATED-DOC",
             PhoneNumber = ["+5511888888888"]
         };
@@ -54,13 +57,49 @@ public sealed class UpdateUserEndpointIntegrationTests : IClassFixture<MongoFixt
         Assert.NotNull(persisted);
         Assert.Equal("Updated", persisted.FirstName);
         Assert.Equal(requestBody.Email, persisted.Email);
-        Assert.NotEqual(seeded.Password, persisted.Password);
+        Assert.Equal(seeded.Password, persisted.Password);
+        Assert.False(persisted.IsActive);
+    }
+
+    [Fact]
+    public async Task PutUsers_WhenCommonUserUpdatesAnotherAccount_ShouldReturnForbidden()
+    {
+        var target = await UsersEndpointTestHost.SeedUserAsync(_fixture, "update-forbidden-target");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "update-forbidden-auth");
+        var requestBody = new UpdateUserRequest
+        {
+            FirstName = "Forbidden",
+            LastName = "Update",
+            DateOfBirth = target.DateOfBirth,
+            Email = target.Email,
+            DocumentNumber = target.DocumentNumber,
+            PhoneNumber = target.PhoneNumber
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/users/{target.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(requestBody);
+
+        var response = await _httpClient.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        var persisted = await _fixture.Repository.FindOneAsync(target.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal(target.FirstName, persisted.FirstName);
     }
 
     [Fact]
     public async Task PutUsers_WhenUserDoesNotExist_ShouldReturnNotFound()
     {
-        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(_httpClient, _fixture, "update-auth-not-found");
+        var token = await UsersEndpointTestHost.CreateAccessTokenByLoginAsync(
+            _httpClient,
+            _fixture,
+            "update-auth-not-found",
+            UserRole.Administrator);
         var requestBody = new UpdateUserRequest
         {
             FirstName = "Test",

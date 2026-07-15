@@ -22,10 +22,6 @@ public sealed class UpdateUserHandler(IUserRepository repository)
         existingUser.Email = request.Email;
         existingUser.DocumentNumber = request.DocumentNumber;
         existingUser.PhoneNumber = request.PhoneNumber ?? [];
-        existingUser.IsActive = true;
-
-        if (!string.IsNullOrWhiteSpace(request.Password))
-            existingUser.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var updated = await repository.UpdateAsync(existingUser, cancellationToken);
         if (!updated) throw new Exception("Error updating user");
@@ -35,10 +31,7 @@ public sealed class UpdateUserHandler(IUserRepository repository)
             Id = existingUser.Id,
             FirstName = existingUser.FirstName,
             LastName = existingUser.LastName,
-            DateOfBirth = existingUser.DateOfBirth,
             Email = existingUser.Email,
-            DocumentNumber = existingUser.DocumentNumber,
-            PhoneNumber = existingUser.PhoneNumber,
             IsActive = existingUser.IsActive
         };
         

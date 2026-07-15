@@ -1,11 +1,13 @@
 using UserManagement.Api.Features.Auth.Jwt;
 using UserManagement.Api.Features.Auth.Login;
 using UserManagement.Api.Features.Auth.Refresh;
+using UserManagement.Api.Features.Users.ChangePassword;
 using UserManagement.Api.Features.Users.CreateUser;
 using UserManagement.Api.Features.Users.DeleteUser;
 using UserManagement.Api.Features.Users.FindAllUsers;
 using UserManagement.Api.Features.Users.FindOneUser;
 using UserManagement.Api.Features.Users.UpdateUser;
+using UserManagement.Api.Features.Users.UpdateUserStatus;
 
 namespace UserManagement.Api.Utils.Extensions;
 
@@ -21,6 +23,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<FindAllUsersHandler>();
         services.AddScoped<FindOneUserHandler>();
         services.AddScoped<UpdateUserHandler>();
+        services.AddScoped<ChangePasswordHandler>();
+        services.AddScoped<UpdateUserStatusHandler>();
         
         return services;
     }

@@ -16,8 +16,6 @@ public class UpdateUserRequest
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
 
-    public string? Password { get; set; }
-    
     public string DocumentNumber { get; set; } = string.Empty;
     
     public List<string> PhoneNumber { get; set; } = [];

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Api.Features.Auth.Authorization;
-using UserManagement.Domain.Users;
 
 namespace UserManagement.Api.Features.Users.UpdateUser;
 
@@ -21,7 +20,6 @@ public static class UpdateUserEndpoint
                     LastName = request.LastName,
                     DateOfBirth = request.DateOfBirth,
                     Email = request.Email,
-                    Password = request.Password,
                     DocumentNumber = request.DocumentNumber,
                     PhoneNumber = request.PhoneNumber
                 },
@@ -29,7 +27,7 @@ public static class UpdateUserEndpoint
                 cancellationToken))
             .WithName("UpdateUser")
             .WithSummary("Updates a user")
-            .RequireAuthorization(AuthPolicies.ActiveUser)
+            .RequireAuthorization(AuthPolicies.OwnerOrAdministrator)
             .Produces<UpdateUserResult>()
             .Produces(StatusCodes.Status400BadRequest);
         
